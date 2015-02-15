@@ -1,0 +1,50 @@
+#!/usr/bin/env ruby
+$: << File.expand_path('../../lib', __FILE__)
+
+require 'rubygems'
+require 'optparse'
+require 'sheetsql'
+
+Version = Sheetsql::VERSION
+logger = Sheetsql::Logger.instance
+
+options = {
+  :debug => false,
+}
+
+ARGV.options do |opt|
+  begin
+    opt.on('',   '--email=EMAIL'  ) {|v| options[:email]     = v    }
+    opt.on('',   '--passwd=PASSWD') {|v| options[:passwd]    = v    }
+    opt.on('-e', '--execute=SQL'  ) {|v| options[:sql]       = v    }
+    opt.on('',   '--configure'    ) {    options[:configure] = true }
+    opt.on('',   '--debug'        ) {    options[:debug]     = true }
+    opt.parse!
+  rescue => e
+    logger.error(e)
+    exit 1
+  end
+end
+
+if options[:debug]
+  logger.set_debug(true)
+end
+
+begin
+  if options[:configure]
+    # XXX:
+  end
+
+  if options[:sql]
+    session = Sheetsql::Auth.auth(options)
+    client = Sheetsql::Client.new(session)
+    p client.query(options[:sql])
+  end
+rescue => e
+  if options[:debug]
+    raise e
+  else
+    logger.error(e)
+    exit 1
+  end
+end
