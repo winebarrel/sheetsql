@@ -7,54 +7,181 @@
 require 'racc/parser.rb'
 
 
-require 'strscan'
-
 module Sheetsql
 
 class Parser < Racc::Parser
 
-module_eval(<<'...end parser.y/module_eval...', 'parser.y', 13)
+module_eval(<<'...end parser.y/module_eval...', 'parser.y', 25)
+
+KEYWORDS = %w(
+  LIKE
+  SHOW
+  SPREADSHEETS
+  SPREADSHEET
+)
+
+KEYWORD_RE = /#{Regexp.union(KEYWORDS).source}(?!\w+)/i
+
+OPERATORS = {
+  '<>' => :NE,
+  '!=' => :NE,
+  '>=' => :GE,
+  '<=' => :LE,
+  '>'  => :GT,
+  '<'  => :LT,
+  '='  => :EQ,
+}
+
+OPERATOR_RE = Regexp.union(OPERATORS.keys)
+
+def initialize(obj)
+  src = obj.is_a?(IO) ? obj.read : obj.to_s
+  @ss = StringScanner.new(src)
+end
+
+def scan
+  tok = nil
+  @prev_tokens = []
+
+  until @ss.eos?
+    if (tok = @ss.scan(/\s+/))
+      # nothing to do
+    elsif (tok = @ss.scan(OPERATOR_RE))
+      yield [OPERATORS.fetch(tok), tok]
+    elsif (tok = @ss.scan(KEYWORD_RE))
+      yield [tok.upcase.to_sym, tok]
+    elsif (tok = @ss.scan(/NULL(?!\w+)/i))
+      yield [:NULL, nil]
+    elsif (tok = @ss.scan(quoted_re('`')))
+      yield [:IDENTIFIER, unquote(tok, '`')]
+    elsif (tok = @ss.scan(quoted_re("'")))
+      yield [:STRING, unquote(tok, "'")]
+    elsif (tok = @ss.scan(quoted_re('"')))
+      yield [:STRING, unquote(tok, '"')]
+    elsif (tok = @ss.scan /\d+(?:\.\d+)?/)
+      yield [:NUMBER, (tok =~ /\./ ? tok.to_f : tok.to_i)]
+    elsif (tok = @ss.scan /\*/)
+      yield [tok, tok]
+    else
+      raise_error(tok, @prev_tokens, @ss)
+    end
+
+    @prev_tokens << tok
+  end
+
+  yield [false, '']
+end
+private :scan
+
+def quoted_re(quotation)
+  /#{quotation}(?:\\\\|\\#{quotation}|[^#{quotation}])*#{quotation}/
+end
+private :quoted_re
+
+def unquote(quoted_value, quotation)
+  str = quoted_value.slice(1...-1)
+  ss = StringScanner.new(str)
+  retval = ''
+
+  until ss.eos?
+    if (tok = ss.scan(/[^\\]+/))
+      retval << tok
+    elsif (tok = ss.scan(/\\/))
+      ch = ss.getch
+      retval << tok unless [quotation, '\\'].include?(ch)
+      retval << ch if ch
+    else
+      raise 'must not happen'
+    end
+  end
+
+  retval
+end
+private :unquote
+
+def raise_error(error_value, prev_tokens, scanner)
+  errmsg = ["__#{error_value}__"]
+
+  if prev_tokens and not prev_tokens.empty?
+    toks = prev_tokens.reverse[0, 5].reverse
+    toks.unshift('...') if prev_tokens.length > toks.length
+    errmsg.unshift(toks.join.strip)
+  end
+
+  if scanner and not (rest = (scanner.rest || '').strip).empty?
+    str = rest[0, 16]
+    str += '...' if rest.length > str.length
+    errmsg << str
+  end
+
+  raise Racc::ParseError, ('parse error on value: %s' % errmsg.join(' '))
+end
+private :raise_error
+
+def parse
+  yyparse self, :scan
+end
+
+def on_error(error_token_id, error_value, value_stack)
+  raise_error(error_value, @prev_tokens, @ss)
+end
+
+def self.parse(obj)
+  self.new(obj).parse
+end
 
 ...end parser.y/module_eval...
 ##### State transition tables begin ###
 
 racc_action_table = [
-     2,     3 ]
+    10,    11,     6,     5,     4,     8,     3 ]
 
 racc_action_check = [
-     1,     2 ]
+     8,     8,     4,     3,     1,     5,     0 ]
 
 racc_action_pointer = [
-   nil,     0,     1,   nil ]
+     4,     4,   nil,     0,     2,     1,   nil,   nil,    -5,   nil,
+   nil,   nil ]
 
 racc_action_default = [
-    -1,    -2,    -2,     4 ]
+    -7,    -7,    -1,    -7,    -7,    -3,    12,    -2,    -7,    -4,
+    -5,    -6 ]
 
 racc_goto_table = [
-     1 ]
+     1,     2,     7,     9 ]
 
 racc_goto_check = [
-     1 ]
+     1,     2,     3,     4 ]
 
 racc_goto_pointer = [
-   nil,     0 ]
+   nil,     0,     1,    -3,    -5 ]
 
 racc_goto_default = [
-   nil,   nil ]
+   nil,   nil,   nil,   nil,   nil ]
 
 racc_reduce_table = [
   0, 0, :racc_error,
-  0, 3, :_reduce_none ]
+  1, 8, :_reduce_none,
+  3, 9, :_reduce_2,
+  0, 10, :_reduce_none,
+  2, 10, :_reduce_4,
+  1, 11, :_reduce_none,
+  1, 11, :_reduce_none ]
 
-racc_reduce_n = 2
+racc_reduce_n = 7
 
-racc_shift_n = 4
+racc_shift_n = 12
 
 racc_token_table = {
   false => 0,
-  :error => 1 }
+  :error => 1,
+  :SHOW => 2,
+  :SPREADSHEETS => 3,
+  :LIKE => 4,
+  :STRING => 5,
+  :NUMBER => 6 }
 
-racc_nt_base = 2
+racc_nt_base = 7
 
 racc_use_result_var = false
 
@@ -77,8 +204,16 @@ Racc_arg = [
 Racc_token_to_s_table = [
   "$end",
   "error",
+  "SHOW",
+  "SPREADSHEETS",
+  "LIKE",
+  "STRING",
+  "NUMBER",
   "$start",
-  "stmt" ]
+  "stmt",
+  "show_stmt",
+  "like_clause",
+  "value" ]
 
 Racc_debug_parser = false
 
@@ -87,6 +222,26 @@ Racc_debug_parser = false
 # reduce 0 omitted
 
 # reduce 1 omitted
+
+module_eval(<<'.,.,', 'parser.y', 7)
+  def _reduce_2(val, _values)
+                    Sheetsql::Command::ShowSpreadsheets.new(:like => val[2])
+              
+  end
+.,.,
+
+# reduce 3 omitted
+
+module_eval(<<'.,.,', 'parser.y', 13)
+  def _reduce_4(val, _values)
+                      val[1]
+                
+  end
+.,.,
+
+# reduce 5 omitted
+
+# reduce 6 omitted
 
 def _reduce_none(val, _values)
   val[0]
