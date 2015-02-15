@@ -1,4 +1,4 @@
-# Sheetsql
+# sheetsql
 
 TODO: Write a gem description
 
