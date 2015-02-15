@@ -30,16 +30,20 @@ if options[:debug]
   logger.set_debug(true)
 end
 
-begin
-  if options[:configure]
-    # XXX:
-  end
+def configure(options)
+  # XXX:
+end
 
-  if options[:sql]
-    session = Sheetsql::Auth.auth(options)
-    client = Sheetsql::Client.new(session)
-    p client.query(options[:sql])
-  end
+def query(options)
+  session = Sheetsql::Auth.auth(options)
+  client = Sheetsql::Client.new(session)
+  result = client.query(options[:sql])
+  puts Sheetsql::Formatter.format(result)
+end
+
+begin
+  configure(options) if options[:configure]
+  query(options)if options[:sql]
 rescue => e
   if options[:debug]
     raise e
