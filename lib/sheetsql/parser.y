@@ -2,6 +2,7 @@ class Parser
 options no_result_var
 rule
   stmt : show_stmt
+       | create_stmt
 
   show_stmt : SHOW SPREADSHEETS like_clause
               {
@@ -11,6 +12,11 @@ rule
               {
                 Sheetsql::Command::ShowWorksheets.new(:title => val[3], :like => val[4])
               }
+
+  create_stmt : CREATE SPREADSHEET IDENTIFIER
+                {
+                  Sheetsql::Command::CreateSpreadsheet.new(:title => val[2])
+                }
 
   like_clause :
               | LIKE STRING
@@ -25,6 +31,7 @@ module Sheetsql
 ---- inner
 
 KEYWORDS = %w(
+  CREATE
   FROM
   LIKE
   SHOW

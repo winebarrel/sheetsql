@@ -50,4 +50,16 @@ describe Sheetsql::Parser do
       it { expect(attrs).to eq(title: '\\`\\`', like: nil) }
     end
   end
+
+  describe Sheetsql::Command::CreateSpreadsheet do
+    describe 'CREATE SPREADSHEET spreadsheet_name' do
+      it { is_expected.to be_a described_class }
+      it { expect(attrs).to eq(title: 'spreadsheet_name') }
+    end
+
+    describe 'CREATE SPREADSHEET `スプレッドシート`' do
+      it { is_expected.to be_a described_class }
+      it { expect(attrs).to eq(title: 'スプレッドシート') }
+    end
+  end
 end

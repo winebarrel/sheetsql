@@ -11,9 +11,10 @@ module Sheetsql
 
 class Parser < Racc::Parser
 
-module_eval(<<'...end parser.y/module_eval...', 'parser.y', 26)
+module_eval(<<'...end parser.y/module_eval...', 'parser.y', 32)
 
 KEYWORDS = %w(
+  CREATE
   FROM
   LIKE
   SHOW
@@ -148,42 +149,46 @@ end
 ##### State transition tables begin ###
 
 racc_action_table = [
-     5,     6,     9,     3,     7,     4,    10,    11,    12,     9 ]
+     4,     7,     8,    12,     9,     5,    10,     6,    13,    14,
+    15,    16,    12 ]
 
 racc_action_check = [
-     3,     3,     5,     0,     4,     1,     6,     9,    10,    12 ]
+     0,     4,     4,     7,     5,     0,     6,     1,     8,     9,
+    12,    13,    16 ]
 
 racc_action_pointer = [
-     1,     5,   nil,    -3,     4,    -5,     1,   nil,   nil,    -1,
-     2,   nil,     2,   nil ]
+    -2,     7,   nil,   nil,    -2,    -4,     6,    -6,     3,     3,
+   nil,   nil,     0,     5,   nil,   nil,     3,   nil ]
 
 racc_action_default = [
-    -6,    -6,    -1,    -6,    -6,    -4,    -6,    14,    -2,    -6,
-    -6,    -5,    -4,    -3 ]
+    -8,    -8,    -1,    -2,    -8,    -8,    -8,    -6,    -8,    -8,
+    18,    -3,    -8,    -8,    -5,    -7,    -6,    -4 ]
 
 racc_goto_table = [
-     8,     2,     1,   nil,   nil,   nil,   nil,    13 ]
+    11,     3,     2,     1,   nil,   nil,   nil,   nil,   nil,    17 ]
 
 racc_goto_check = [
-     3,     2,     1,   nil,   nil,   nil,   nil,     3 ]
+     4,     3,     2,     1,   nil,   nil,   nil,   nil,   nil,     4 ]
 
 racc_goto_pointer = [
-   nil,     2,     1,    -5 ]
+   nil,     3,     2,     1,    -7 ]
 
 racc_goto_default = [
-   nil,   nil,   nil,   nil ]
+   nil,   nil,   nil,   nil,   nil ]
 
 racc_reduce_table = [
   0, 0, :racc_error,
-  1, 10, :_reduce_none,
-  3, 11, :_reduce_2,
-  5, 11, :_reduce_3,
-  0, 12, :_reduce_none,
-  2, 12, :_reduce_5 ]
+  1, 12, :_reduce_none,
+  1, 12, :_reduce_none,
+  3, 13, :_reduce_3,
+  5, 13, :_reduce_4,
+  3, 14, :_reduce_5,
+  0, 15, :_reduce_none,
+  2, 15, :_reduce_7 ]
 
-racc_reduce_n = 6
+racc_reduce_n = 8
 
-racc_shift_n = 14
+racc_shift_n = 18
 
 racc_token_table = {
   false => 0,
@@ -193,10 +198,12 @@ racc_token_table = {
   :WORKSHEETS => 4,
   :FROM => 5,
   :IDENTIFIER => 6,
-  :LIKE => 7,
-  :STRING => 8 }
+  :CREATE => 7,
+  :SPREADSHEET => 8,
+  :LIKE => 9,
+  :STRING => 10 }
 
-racc_nt_base = 9
+racc_nt_base = 11
 
 racc_use_result_var = false
 
@@ -224,11 +231,14 @@ Racc_token_to_s_table = [
   "WORKSHEETS",
   "FROM",
   "IDENTIFIER",
+  "CREATE",
+  "SPREADSHEET",
   "LIKE",
   "STRING",
   "$start",
   "stmt",
   "show_stmt",
+  "create_stmt",
   "like_clause" ]
 
 Racc_debug_parser = false
@@ -239,24 +249,33 @@ Racc_debug_parser = false
 
 # reduce 1 omitted
 
-module_eval(<<'.,.,', 'parser.y', 7)
-  def _reduce_2(val, _values)
+# reduce 2 omitted
+
+module_eval(<<'.,.,', 'parser.y', 8)
+  def _reduce_3(val, _values)
                     Sheetsql::Command::ShowSpreadsheets.new(:like => val[2])
               
   end
 .,.,
 
-module_eval(<<'.,.,', 'parser.y', 11)
-  def _reduce_3(val, _values)
+module_eval(<<'.,.,', 'parser.y', 12)
+  def _reduce_4(val, _values)
                     Sheetsql::Command::ShowWorksheets.new(:title => val[3], :like => val[4])
               
   end
 .,.,
 
-# reduce 4 omitted
-
 module_eval(<<'.,.,', 'parser.y', 17)
   def _reduce_5(val, _values)
+                      Sheetsql::Command::CreateSpreadsheet.new(:title => val[2])
+                
+  end
+.,.,
+
+# reduce 6 omitted
+
+module_eval(<<'.,.,', 'parser.y', 23)
+  def _reduce_7(val, _values)
                       val[1]
                 
   end
