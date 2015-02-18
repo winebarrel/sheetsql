@@ -68,10 +68,12 @@ def scan
       yield [:STRING, unquote(tok, "'")]
     elsif (tok = @ss.scan(quoted_re('"')))
       yield [:STRING, unquote(tok, '"')]
-    elsif (tok = @ss.scan /\d+(?:\.\d+)?/)
+    elsif (tok = @ss.scan(/\d+(?:\.\d+)?/))
       yield [:NUMBER, (tok =~ /\./ ? tok.to_f : tok.to_i)]
-    elsif (tok = @ss.scan /\*/)
+    elsif (tok = @ss.scan(/\*/))
       yield [tok, tok]
+    elsif (tok = @ss.scan(/\w+/))
+      yield [:IDENTIFIER, tok]
     else
       raise_error(tok, @prev_tokens, @ss)
     end
