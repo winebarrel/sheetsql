@@ -7,9 +7,9 @@ rule
               {
                 Sheetsql::Command::ShowSpreadsheets.new(:like => val[2])
               }
-            | SHOW WORKSHEETS FROM IDENTIFIER
+            | SHOW WORKSHEETS FROM IDENTIFIER like_clause
               {
-                Sheetsql::Command::ShowWorksheets.new(:spreadsheet => val[3])
+                Sheetsql::Command::ShowWorksheets.new(:title => val[3], :like => val[4])
               }
 
   like_clause :
@@ -74,7 +74,7 @@ def scan
       yield [:STRING, unquote(tok, '"')]
     elsif (tok = @ss.scan(/\d+(?:\.\d+)?/))
       yield [:NUMBER, (tok =~ /\./ ? tok.to_f : tok.to_i)]
-    elsif (tok = @ss.scan(/\*/))
+    elsif (tok = @ss.scan(/\./))
       yield [tok, tok]
     elsif (tok = @ss.scan(/\w+/))
       yield [:IDENTIFIER, tok]

@@ -63,7 +63,7 @@ def scan
       yield [:STRING, unquote(tok, '"')]
     elsif (tok = @ss.scan(/\d+(?:\.\d+)?/))
       yield [:NUMBER, (tok =~ /\./ ? tok.to_f : tok.to_i)]
-    elsif (tok = @ss.scan(/\*/))
+    elsif (tok = @ss.scan(/\./))
       yield [tok, tok]
     elsif (tok = @ss.scan(/\w+/))
       yield [:IDENTIFIER, tok]
@@ -148,27 +148,27 @@ end
 ##### State transition tables begin ###
 
 racc_action_table = [
-     5,     6,     9,     3,     7,     4,    10,    11,    12 ]
+     5,     6,     9,     3,     7,     4,    10,    11,    12,     9 ]
 
 racc_action_check = [
-     3,     3,     5,     0,     4,     1,     6,     9,    10 ]
+     3,     3,     5,     0,     4,     1,     6,     9,    10,    12 ]
 
 racc_action_pointer = [
      1,     5,   nil,    -3,     4,    -5,     1,   nil,   nil,    -1,
-     2,   nil,   nil ]
+     2,   nil,     2,   nil ]
 
 racc_action_default = [
-    -6,    -6,    -1,    -6,    -6,    -4,    -6,    13,    -2,    -6,
-    -6,    -5,    -3 ]
+    -6,    -6,    -1,    -6,    -6,    -4,    -6,    14,    -2,    -6,
+    -6,    -5,    -4,    -3 ]
 
 racc_goto_table = [
-     1,     2,     8 ]
+     8,     2,     1,   nil,   nil,   nil,   nil,    13 ]
 
 racc_goto_check = [
-     1,     2,     3 ]
+     3,     2,     1,   nil,   nil,   nil,   nil,     3 ]
 
 racc_goto_pointer = [
-   nil,     0,     1,    -3 ]
+   nil,     2,     1,    -5 ]
 
 racc_goto_default = [
    nil,   nil,   nil,   nil ]
@@ -177,13 +177,13 @@ racc_reduce_table = [
   0, 0, :racc_error,
   1, 10, :_reduce_none,
   3, 11, :_reduce_2,
-  4, 11, :_reduce_3,
+  5, 11, :_reduce_3,
   0, 12, :_reduce_none,
   2, 12, :_reduce_5 ]
 
 racc_reduce_n = 6
 
-racc_shift_n = 13
+racc_shift_n = 14
 
 racc_token_table = {
   false => 0,
@@ -248,7 +248,7 @@ module_eval(<<'.,.,', 'parser.y', 7)
 
 module_eval(<<'.,.,', 'parser.y', 11)
   def _reduce_3(val, _values)
-                    Sheetsql::Command::ShowWorksheets.new(:spreadsheet => val[3])
+                    Sheetsql::Command::ShowWorksheets.new(:title => val[3], :like => val[4])
               
   end
 .,.,

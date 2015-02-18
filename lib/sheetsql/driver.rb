@@ -28,6 +28,22 @@ class Sheetsql::Driver
     end
   end
 
+  def show_worksheets(command)
+    spreadsheet = @session.spreadsheet_by_title(command.title)
+    worksheets = spreadsheet.worksheets
+
+    if command.like
+      re = like_to_regexp(command.like)
+      worksheets.reject! {|worksheet| worksheet.title !~ re }
+    end
+
+    worksheets.map do |worksheet|
+      {
+        :title => worksheet.title,
+      }
+    end
+  end
+
   def underscore(command)
     class_name = command.class.to_s.split('::').last
     class_name.gsub(/([A-Z]+)/, '_\1').sub(/\A_/, '').downcase

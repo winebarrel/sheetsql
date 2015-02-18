@@ -32,17 +32,22 @@ describe Sheetsql::Parser do
   describe Sheetsql::Command::ShowWorksheets do
     describe 'SHOW WORKSHEETS FROM spreadsheet_name' do
       it { is_expected.to be_a described_class }
-      it { expect(attrs).to eq(spreadsheet: 'spreadsheet_name') }
+      it { expect(attrs).to eq(title: 'spreadsheet_name', like: nil) }
+    end
+
+    describe 'SHOW WORKSHEETS FROM spreadsheet_name like "%"' do
+      it { is_expected.to be_a described_class }
+      it { expect(attrs).to eq(title: 'spreadsheet_name', like: '%') }
     end
 
     describe 'SHOW WORKSHEETS FROM `スプレッドシート`' do
       it { is_expected.to be_a described_class }
-      it { expect(attrs).to eq(spreadsheet: 'スプレッドシート') }
+      it { expect(attrs).to eq(title: 'スプレッドシート', like: nil) }
     end
 
     describe 'SHOW WORKSHEETS FROM `\\\\\\`\\\\\\``' do
       it { is_expected.to be_a described_class }
-      it { expect(attrs).to eq(spreadsheet: '\\`\\`') }
+      it { expect(attrs).to eq(title: '\\`\\`', like: nil) }
     end
   end
 end
