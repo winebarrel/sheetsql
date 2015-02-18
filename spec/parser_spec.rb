@@ -62,4 +62,16 @@ describe Sheetsql::Parser do
       it { expect(attrs).to eq(title: 'スプレッドシート') }
     end
   end
+
+  describe Sheetsql::Command::CreateWorksheet do
+    describe 'CREATE WORKSHEET worksheet_name ON spreadsheet_name' do
+      it { is_expected.to be_a described_class }
+      it { expect(attrs).to eq(title: 'worksheet_name', spreadsheet: 'spreadsheet_name') }
+    end
+
+    describe 'CREATE WORKSHEET `ワークシート` ON `スプレッドシート`' do
+      it { is_expected.to be_a described_class }
+      it { expect(attrs).to eq(title: 'ワークシート', spreadsheet: 'スプレッドシート') }
+    end
+  end
 end

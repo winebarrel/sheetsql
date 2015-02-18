@@ -53,6 +53,15 @@ class Sheetsql::Driver
     }
   end
 
+  def create_worksheet(command)
+    spreadsheet = @session.spreadsheet_by_title(command.spreadsheet)
+    worksheet = spreadsheet.add_worksheet(command.title)
+
+    {
+      :title => worksheet.title,
+    }
+  end
+
   def underscore(command)
     class_name = command.class.to_s.split('::').last
     class_name.gsub(/([A-Z]+)/, '_\1').sub(/\A_/, '').downcase

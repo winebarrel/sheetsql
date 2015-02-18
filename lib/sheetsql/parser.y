@@ -17,6 +17,10 @@ rule
                 {
                   Sheetsql::Command::CreateSpreadsheet.new(:title => val[2])
                 }
+              | CREATE WORKSHEET IDENTIFIER ON IDENTIFIER
+                {
+                  Sheetsql::Command::CreateWorksheet.new(:title => val[2], :spreadsheet => val[4])
+                }
 
   like_clause :
               | LIKE STRING
@@ -34,6 +38,7 @@ KEYWORDS = %w(
   CREATE
   FROM
   LIKE
+  ON
   SHOW
   SPREADSHEETS
   SPREADSHEET
