@@ -11,16 +11,19 @@ module Sheetsql
 
 class Parser < Racc::Parser
 
-module_eval(<<'...end parser.y/module_eval...', 'parser.y', 25)
+module_eval(<<'...end parser.y/module_eval...', 'parser.y', 26)
 
 KEYWORDS = %w(
+  FROM
   LIKE
   SHOW
   SPREADSHEETS
   SPREADSHEET
+  WORKSHEETS
+  WORKSHEET
 )
 
-KEYWORD_RE = /#{Regexp.union(KEYWORDS).source}(?!\w+)/i
+KEYWORD_RE = /#{Regexp.union(KEYWORDS).source}/i
 
 OPERATORS = {
   '<>' => :NE,
@@ -48,9 +51,9 @@ def scan
       # nothing to do
     elsif (tok = @ss.scan(OPERATOR_RE))
       yield [OPERATORS.fetch(tok), tok]
-    elsif (tok = @ss.scan(KEYWORD_RE))
+    elsif (tok = scan_keyword(KEYWORD_RE))
       yield [tok.upcase.to_sym, tok]
-    elsif (tok = @ss.scan(/NULL(?!\w+)/i))
+    elsif (tok = scan_keyword(/NULL/i))
       yield [:NULL, nil]
     elsif (tok = @ss.scan(quoted_re('`')))
       yield [:IDENTIFIER, unquote(tok, '`')]
@@ -58,10 +61,12 @@ def scan
       yield [:STRING, unquote(tok, "'")]
     elsif (tok = @ss.scan(quoted_re('"')))
       yield [:STRING, unquote(tok, '"')]
-    elsif (tok = @ss.scan /\d+(?:\.\d+)?/)
+    elsif (tok = @ss.scan(/\d+(?:\.\d+)?/))
       yield [:NUMBER, (tok =~ /\./ ? tok.to_f : tok.to_i)]
-    elsif (tok = @ss.scan /\*/)
+    elsif (tok = @ss.scan(/\*/))
       yield [tok, tok]
+    elsif (tok = @ss.scan(/\w+/))
+      yield [:IDENTIFIER, tok]
     else
       raise_error(tok, @prev_tokens, @ss)
     end
@@ -77,6 +82,15 @@ def quoted_re(quotation)
   /#{quotation}(?:\\\\|\\#{quotation}|[^#{quotation}])*#{quotation}/
 end
 private :quoted_re
+
+def scan_keyword(re)
+  if (tok = @ss.check(re)) and @ss.rest.slice(tok.length) !~ /\A\w/
+    @ss.scan(re)
+  else
+    nil
+  end
+end
+private :scan_keyword
 
 def unquote(quoted_value, quotation)
   str = quoted_value.slice(1...-1)
@@ -134,54 +148,55 @@ end
 ##### State transition tables begin ###
 
 racc_action_table = [
-    10,    11,     6,     5,     4,     8,     3 ]
+     5,     6,     9,     3,     7,     4,    10,    11,    12 ]
 
 racc_action_check = [
-     8,     8,     4,     3,     1,     5,     0 ]
+     3,     3,     5,     0,     4,     1,     6,     9,    10 ]
 
 racc_action_pointer = [
-     4,     4,   nil,     0,     2,     1,   nil,   nil,    -5,   nil,
-   nil,   nil ]
+     1,     5,   nil,    -3,     4,    -5,     1,   nil,   nil,    -1,
+     2,   nil,   nil ]
 
 racc_action_default = [
-    -7,    -7,    -1,    -7,    -7,    -3,    12,    -2,    -7,    -4,
-    -5,    -6 ]
+    -6,    -6,    -1,    -6,    -6,    -4,    -6,    13,    -2,    -6,
+    -6,    -5,    -3 ]
 
 racc_goto_table = [
-     1,     2,     7,     9 ]
+     1,     2,     8 ]
 
 racc_goto_check = [
-     1,     2,     3,     4 ]
+     1,     2,     3 ]
 
 racc_goto_pointer = [
-   nil,     0,     1,    -3,    -5 ]
+   nil,     0,     1,    -3 ]
 
 racc_goto_default = [
-   nil,   nil,   nil,   nil,   nil ]
+   nil,   nil,   nil,   nil ]
 
 racc_reduce_table = [
   0, 0, :racc_error,
-  1, 8, :_reduce_none,
-  3, 9, :_reduce_2,
-  0, 10, :_reduce_none,
-  2, 10, :_reduce_4,
-  1, 11, :_reduce_none,
-  1, 11, :_reduce_none ]
+  1, 10, :_reduce_none,
+  3, 11, :_reduce_2,
+  4, 11, :_reduce_3,
+  0, 12, :_reduce_none,
+  2, 12, :_reduce_5 ]
 
-racc_reduce_n = 7
+racc_reduce_n = 6
 
-racc_shift_n = 12
+racc_shift_n = 13
 
 racc_token_table = {
   false => 0,
   :error => 1,
   :SHOW => 2,
   :SPREADSHEETS => 3,
-  :LIKE => 4,
-  :STRING => 5,
-  :NUMBER => 6 }
+  :WORKSHEETS => 4,
+  :FROM => 5,
+  :IDENTIFIER => 6,
+  :LIKE => 7,
+  :STRING => 8 }
 
-racc_nt_base = 7
+racc_nt_base = 9
 
 racc_use_result_var = false
 
@@ -206,14 +221,15 @@ Racc_token_to_s_table = [
   "error",
   "SHOW",
   "SPREADSHEETS",
+  "WORKSHEETS",
+  "FROM",
+  "IDENTIFIER",
   "LIKE",
   "STRING",
-  "NUMBER",
   "$start",
   "stmt",
   "show_stmt",
-  "like_clause",
-  "value" ]
+  "like_clause" ]
 
 Racc_debug_parser = false
 
@@ -230,18 +246,21 @@ module_eval(<<'.,.,', 'parser.y', 7)
   end
 .,.,
 
-# reduce 3 omitted
+module_eval(<<'.,.,', 'parser.y', 11)
+  def _reduce_3(val, _values)
+                    Sheetsql::Command::ShowWorksheets.new(:spreadsheet => val[3])
+              
+  end
+.,.,
 
-module_eval(<<'.,.,', 'parser.y', 13)
-  def _reduce_4(val, _values)
+# reduce 4 omitted
+
+module_eval(<<'.,.,', 'parser.y', 17)
+  def _reduce_5(val, _values)
                       val[1]
                 
   end
 .,.,
-
-# reduce 5 omitted
-
-# reduce 6 omitted
 
 def _reduce_none(val, _values)
   val[0]

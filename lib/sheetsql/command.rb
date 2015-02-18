@@ -14,4 +14,5 @@ module Sheetsql::Command
   end
 
   define :ShowSpreadsheets, :like
+  define :ShowWorksheets, :spreadsheet
 end

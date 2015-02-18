@@ -7,15 +7,16 @@ rule
               {
                 Sheetsql::Command::ShowSpreadsheets.new(:like => val[2])
               }
+            | SHOW WORKSHEETS FROM IDENTIFIER
+              {
+                Sheetsql::Command::ShowWorksheets.new(:spreadsheet => val[3])
+              }
 
   like_clause :
-              | LIKE value
+              | LIKE STRING
                 {
                   val[1]
                 }
-
-  value : STRING
-        | NUMBER
 
 ---- header
 
@@ -24,13 +25,16 @@ module Sheetsql
 ---- inner
 
 KEYWORDS = %w(
+  FROM
   LIKE
   SHOW
   SPREADSHEETS
   SPREADSHEET
+  WORKSHEETS
+  WORKSHEET
 )
 
-KEYWORD_RE = /#{Regexp.union(KEYWORDS).source}(?!\w+)/i
+KEYWORD_RE = /#{Regexp.union(KEYWORDS).source}/i
 
 OPERATORS = {
   '<>' => :NE,
@@ -58,9 +62,9 @@ def scan
       # nothing to do
     elsif (tok = @ss.scan(OPERATOR_RE))
       yield [OPERATORS.fetch(tok), tok]
-    elsif (tok = @ss.scan(KEYWORD_RE))
+    elsif (tok = scan_keyword(KEYWORD_RE))
       yield [tok.upcase.to_sym, tok]
-    elsif (tok = @ss.scan(/NULL(?!\w+)/i))
+    elsif (tok = scan_keyword(/NULL/i))
       yield [:NULL, nil]
     elsif (tok = @ss.scan(quoted_re('`')))
       yield [:IDENTIFIER, unquote(tok, '`')]
@@ -89,6 +93,15 @@ def quoted_re(quotation)
   /#{quotation}(?:\\\\|\\#{quotation}|[^#{quotation}])*#{quotation}/
 end
 private :quoted_re
+
+def scan_keyword(re)
+  if (tok = @ss.check(re)) and @ss.rest.slice(tok.length) !~ /\A\w/
+    @ss.scan(re)
+  else
+    nil
+  end
+end
+private :scan_keyword
 
 def unquote(quoted_value, quotation)
   str = quoted_value.slice(1...-1)
