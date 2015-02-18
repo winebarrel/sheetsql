@@ -17,4 +17,6 @@ module Sheetsql::Command
   define :ShowWorksheets, :title, :like
   define :CreateSpreadsheet, :title
   define :CreateWorksheet, :spreadsheet, :title
+  define :DropSpreadsheet, :title
+  define :DropWorksheet, :spreadsheet, :title
 end

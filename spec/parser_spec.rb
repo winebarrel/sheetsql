@@ -74,4 +74,28 @@ describe Sheetsql::Parser do
       it { expect(attrs).to eq(title: 'ワークシート', spreadsheet: 'スプレッドシート') }
     end
   end
+
+  describe Sheetsql::Command::DropSpreadsheet do
+    describe 'DROP SPREADSHEET spreadsheet_name' do
+      it { is_expected.to be_a described_class }
+      it { expect(attrs).to eq(title: 'spreadsheet_name') }
+    end
+
+    describe 'DROP SPREADSHEET `スプレッドシート`' do
+      it { is_expected.to be_a described_class }
+      it { expect(attrs).to eq(title: 'スプレッドシート') }
+    end
+  end
+
+  describe Sheetsql::Command::DropWorksheet do
+    describe 'DROP WORKSHEET worksheet_name ON spreadsheet_name' do
+      it { is_expected.to be_a described_class }
+      it { expect(attrs).to eq(title: 'worksheet_name', spreadsheet: 'spreadsheet_name') }
+    end
+
+    describe 'DROP WORKSHEET `ワークシート` ON `スプレッドシート`' do
+      it { is_expected.to be_a described_class }
+      it { expect(attrs).to eq(title: 'ワークシート', spreadsheet: 'スプレッドシート') }
+    end
+  end
 end

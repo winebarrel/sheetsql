@@ -3,6 +3,7 @@ options no_result_var
 rule
   stmt : show_stmt
        | create_stmt
+       | drop_stmt
 
   show_stmt : SHOW SPREADSHEETS like_clause
               {
@@ -22,6 +23,15 @@ rule
                   Sheetsql::Command::CreateWorksheet.new(:title => val[2], :spreadsheet => val[4])
                 }
 
+  drop_stmt : DROP SPREADSHEET IDENTIFIER
+                {
+                  Sheetsql::Command::DropSpreadsheet.new(:title => val[2])
+                }
+              | DROP WORKSHEET IDENTIFIER ON IDENTIFIER
+                {
+                  Sheetsql::Command::DropWorksheet.new(:title => val[2], :spreadsheet => val[4])
+                }
+
   like_clause :
               | LIKE STRING
                 {
@@ -36,6 +46,7 @@ module Sheetsql
 
 KEYWORDS = %w(
   CREATE
+  DROP
   FROM
   LIKE
   ON

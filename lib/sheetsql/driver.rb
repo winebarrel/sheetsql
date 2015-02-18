@@ -62,6 +62,32 @@ class Sheetsql::Driver
     }
   end
 
+  def drop_spreadsheet(command)
+    spreadsheet = @session.spreadsheet_by_title(command.title)
+
+    retval = {
+      :title => spreadsheet.title,
+      :url => spreadsheet.human_url,
+    }
+
+    spreadsheet.delete
+
+    retval
+  end
+
+  def drop_worksheet(command)
+    spreadsheet = @session.spreadsheet_by_title(command.spreadsheet)
+    worksheet = spreadsheet.worksheet_by_title(command.title)
+
+    retval = {
+      :title => worksheet.title,
+    }
+
+    worksheet.delete
+
+    retval
+  end
+
   def underscore(command)
     class_name = command.class.to_s.split('::').last
     class_name.gsub(/([A-Z]+)/, '_\1').sub(/\A_/, '').downcase
